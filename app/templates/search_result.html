@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block body_main %}
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6">
+                <input id="keywords" class="form-control form-sm" value="{{ query }}"/>
+            </div>
+            <div class="col-sm-2">
+                <button id="search" class="btn btn-primary "><span class="glyphicon glyphicon-search" aria-hidden="true"></span>&nbsp;Search
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-8 searchResult" data-bind="foreach: items.documents">
+                <article class="itemBox media">
+                    <div class="itemAuthorIcon media-left">
+                        <a data-bind="attr: {href: '{{ prefix }}/' + user_name()}">
+                            <img class="media-object img-thumbnail" alt="user_icon"
+                                 data-bind="attr: {src: '{{ prefix }}/' + user_name() + '/icon'}">
+                        </a>
+                    </div>
+                    <div class="itemContent media-body">
+                        <div class="itemInfo"><a data-bind="text:user_name, attr: {href: '{{ prefix }}/home/' + user_name()}"></a>が<span
+                                data-bind="text:created()"></span>に投稿しました
+                        </div>
+                        <div class="pull-left"><a
+                                data-bind="text:title, attr: {href: '{{ prefix }}/'+user_name()+'/items/'+_id()}"></a>
+                        </div>
+                        <ul class="list-inline" data-bind="foreach: tags">
+                            <li><a class='label label-info label-sm'
+                                   data-bind="html:'<span class=\'glyphicon glyphicon-tag\' aria-hidden=\'true\'></span>&nbsp;' + $data, attr:{href:'{{ prefix }}/tags/' + $data}"></a>
+                            </li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+    <script>
+        function SearchResultViewModel(){
+            var self = this;
+            self.items = ko.mapping.fromJS({{ items | tojson | safe }});
+        }
+         ko.applyBindings(new SearchResultViewModel());
+    </script>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block js_extra %}
+    <script src="{{ prefix }}/static/js/jquery.sticky-kit.min.js"></script>
+{% endblock %}
+{% block body_main %}
+    <div class="itemsHeader">
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-9"  data-bind="with: item">
+                <h1 class=h3 data-bind="text: title"></h1>
+                <ul class="list-inline" data-bind="foreach: tags">
+                    <li><a class='label label-info label-sm' data-bind="visible: $data != '', html:'<span class=\'glyphicon glyphicon-tag\' aria-hidden=\'true\'></span>&nbsp;' + $data, attr:{href:'{{ prefix }}/tags/' + $data}"></a></li>
+                </ul>
+                <div class="metaInfo">
+                    {% if author._id==user._id  %}
+                        <a href="{{ prefix }}/drafts/{{ item._id }}/edit" class="btn btn-default btn-xs">投稿を編集</a>
+                    {% endif %}
+                    <a data-bind="text: user_name, attr:{href:'{{ prefix }}/home/'+user_name()}"></a>
+                    が
+                    <span data-bind="text: $root.DateStr(created())"></span>
+                    に投稿(<span data-bind="text: $root.DateStr(modified())"></span>に編集)
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <ul class="list-inline stockHeader text-center">
+                    <li class="muted">
+                        <div class="stock area">
+                            <span class="glyphicon glyphicon-briefcase icon" aria-hidden="true"></span>
+                            <span class="count" data-bind="text: stocks.count">0</span></div>
+                        <div class="stock text">ストック</div>
+                    </li>
+                    <li>
+                        <div class="comment area">
+                            <span class="glyphicon glyphicon-comment icon" aria-hidden="true"></span>
+                            <span class="count" data-bind="text: comments.count">0</span>
+                        </div>
+                        <div class="comment text">コメント</div>
+
+                    </li>
+                </ul>
+                <button class="btn btn-default btn-block btn-sm" data-bind="click: $root.stock">
+                    <span class="glyphicon glyphicon-briefcase icon" aria-hidden="true"></span>
+                    ストック<span data-bind="visible: isStock() > -1">解除</span>
+                </button>
+                <div class="stockUsers" data-bind="foreach: stocks.documents">
+                    <a data-bind="attr: {href: '{{ prefix }}/home/'+user_name()}"><img data-bind="attr: {src: '{{ prefix }}/'+user_name()+'/icon'}" /></a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    </div>
+    <div class="container itemsBody" data-bind="with: item">
+    <div class='col-sm-9 left-pane'>
+        <div class="markdown-body" data-bind="html: publish_html"></div>
+        <hr class="dot-line">
+        <div class="commentArea">
+            <div data-bind="foreach: $root.comments.documents">
+                <div class="commentArea row panel panel-info">
+                    <div class="commentHeader panel-heading row">
+                        <div class="icon col-sm-8">
+                            <img data-bind="attr:{src: '{{ prefix }}/' + user_name() + '/icon'}" width="36" height="36"/>
+                            <a data-bind="text:user_name, attr:{href: '{{ prefix }}/home/' + user_name()}"></a>
+                        </div>
+                        <div class="commentUtil pull-right">
+                            <div data-bind="text: created"></div>
+                            <div data-bind="visible: user_id() == $root.user._id()">
+                                <a class="" href="#" data-bind="click: $root.editComment">編集</a>
+                                <a class="" href="#" data-bind="click: $root.removeComment">削除</a>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div class="commentBody panel-body" data-bind="text: markdown">
+
+                    </div>
+                </div>
+            </div>
+            <div>
+                コメントを投稿する
+                <textarea class="form-control" data-bind="value: $root.comment"></textarea>
+                <div>
+                    <button class="btn btn-primary pull-right" data-bind="click: $root.postComment">投稿する</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id='side_toc' class="markdown-toc col-sm-3 right-pane">
+        <div class="panel panel-danger text-center">目次</div>
+        <div data-bind="html: publish_toc">
+
+        </div>
+
+    </div>
+    </div>
+    <script>
+        function PublicationViewModel() {
+            var self = this;
+            self.user = ko.mapping.fromJS({{ user | tojson | safe }});
+            self.author = ko.mapping.fromJS({{ author | tojson | safe }});
+            self.item = ko.mapping.fromJS({{ item | tojson | safe }});
+            self.comments = ko.mapping.fromJS({{ comments | tojson | safe }});
+            self.stocks = ko.mapping.fromJS({{ stocks | tojson | safe }});
+            self.comment = ko.observable('');
+            
+            self.isStock = ko.computed(function(){return self.user.stocks.indexOf(self.item._id())});
+            
+            
+            self.DateStr = function(iodate){
+              return iodate.split('T')[0]
+            };
+
+            self.getStockUser = function(){
+                var url = '{{ prefix }}/stocks/'+self.item._id();
+                $.get(url, function(data){
+                    
+                    ko.mapping.fromJS(data.data, self.stocks)
+                })
+            };
+            self.stock = function(){
+                var url = '{{ prefix }}/toggle_stocks/'+self.item._id();
+                url += ( self.isStock() > -1)?'/remove':'/add';
+                $.get(url,function(data){
+                    ko.mapping.fromJS(data.data, self.user);
+                    self.getStockUser();
+                })
+            };
+            self.getComments = function(){
+                var url = '{{ prefix }}/' + self.author.user_name() + '/items/' + self.item._id() + '/comments';
+                $.get(url, function(data){
+                    console.log(data);
+                    ko.mapping.fromJS(data.data, self.comments);
+                });
+            };
+            self.postComment = function () {
+                var post_data = {
+                    user_id: self.user._id(),
+                    user_name: self.user.user_name(),
+                    item_id: self.item._id(),
+                    markdown: self.comment(),
+                    html:''
+                };
+                $.post('{{ prefix }}/comments',{data:JSON.stringify(post_data)}, function(data){
+                    self.getComments();
+                })
+            };
+            self.editComment = function(comment){
+
+            };
+            self.removeComment = function(comment){
+                console.log(comment);
+                var url = "{{ prefix }}/comments/" + comment._id();
+                $.ajax({
+                    type: 'DELETE',
+                    url: url,
+                    success: function(){
+                        self.getComments();
+                    }
+                });
+            };
+
+
+        }
+        ko.applyBindings(new PublicationViewModel());
+        var rendering = function(){
+            try {
+                MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+            }catch(e){console.log(e)}
+            $('pre code').each(function (i, block) {
+                if(block.className != 'lang-math') {
+                    hljs.highlightBlock(block);
+                }
+            });
+        }();
+        $("#side_toc").stick_in_parent();
+    </script>
+{% endblock %}

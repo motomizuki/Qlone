@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block body_main %}
+    <div class="container">
+        <div id="success_message" class="alert alert-success" hidden>Updated Successfully</div>
+        <div class="page-header"><span class='h4'>ユーザ設定</span></div>
+        <div class="col-sm-3 left-pane">
+            <ul class="nav nav-pills nav-stacked" data-bind="foreach: navs">
+                <li role="presentation" class="active" data-bind="css:{active: $root.selected() == $data}">
+                    <a href="#" data-bind="text: $data, click:$root.selectNavs">プロフィール</a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-sm-9 right-pane">
+            <div data-bind="visible:selected()==navs[0]">
+                <div class="row">
+                <h6>プロフィール画像</h6>
+                <div class="iconUpload">
+                    <div class="col-sm-2">
+                        <img data-bind="attr:{src: iconUrl}" class='userIcon' width="50" height="50"/>
+                    </div>
+                    <div>
+                        <input type="file" multiple="multiple">
+                        <button id='img_upload' class="btn btn-info btn-lg imgUpload"><span class="glyphicon glyphicon-picture" aria-hidden="true"></span>画像のアップロード</button>
+
+                    </div>
+                     </div>
+                <hr>
+                </div>
+                <div class="row">
+                <h6>プロフィール設定</h6>
+                <form data-bind="submit: profileSubmit, with: user.profile">
+                    <div class="row">
+                        <label class="control-label">名前</label>
+
+                        <div class="form-group-sm">
+                            <div class="col-sm-4">
+                                <input class="form-control" placeholder="名" data-bind="value: first_name"/>
+                            </div>
+                            <div class="col-sm-4">
+                                <input class="form-control" placeholder="姓" data-bind="value: last_name"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label class="control-label">組織，会社，部署等</label>
+                        <div class="form-group-sm">
+                            <div class="col-sm-8">
+                                <input class="form-control" placeholder="部署とか" data-bind="value: organization"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label class="control-label">自己紹介</label>
+                        <div class="form-group">
+                            <div class="col-sm-8">
+                                <textarea class="form-control" placeholder="自己紹介" rows="5" data-bind="value: description"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row btnArea">
+                        <button type="submit" class="btn btn-primary btn-sm">保存する</button>
+                        <a class="btn btn-link" data-bind="attr:{href: '{{ prefix }}/'+$root.user.user_name()}">キャンセル</a>
+                    </div>
+                </form>
+                </div>
+            </div>
+            <div data-bind="visible:selected()==navs[1]">
+                <form data-bind="submit: passwordSubmit">
+                    <div class="row">
+                        <label class="control-label">現在のパスワード</label>
+                        <div class="form-group-sm">
+                            <div class="col-sm-6">
+                                <input class="form-control" placeholder="パスワード" data-bind="value: old_password"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <label class="control-label">新しいパスワード</label>
+                        <div class="form-group-sm">
+                            <div class="col-sm-6">
+                                <input class="form-control" placeholder="新しいパスワード" data-bind="value: new_password"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row btnArea">
+                        <button type="submit" class="btn btn-primary btn-sm">変更を保存する</button>
+                        <a class="btn btn-link" data-bind="attr:{href: '{{ prefix }}/'+$root.user.user_name()}">キャンセル</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        function SettingsViewModel() {
+            var self = this;
+            self.navs = ['プロフィール', 'パスワード'];
+            self.user = ko.mapping.fromJS({{ user | tojson | safe }});
+            self.selected = ko.observable('プロフィール');
+            self.iconUrl = ko.observable('{{ prefix }}/'+self.user.user_name()+'/icon');
+            self.old_password = ko.observable();
+            self.new_password = ko.observable();
+
+            self.selectNavs = function (nav) {
+                self.selected(nav);
+            };
+            self.profileSubmit = function () {
+                var post_data = ko.mapping.toJS(self.user);
+                
+                $.post('{{ prefix }}/users/'+self.user._id(),{data:JSON.stringify({'profile': post_data['profile']})},function(){
+                    $('#success_message').fadeIn(1000).fadeOut(1000);
+                });
+
+            };
+            self.passwordSubmit = function () {
+
+            };
+
+
+        }
+        ko.applyBindings(new SettingsViewModel());
+        var uploadUrl = '{{ prefix }}/upload/icon';
+        function uploadCallback(data){
+            var timestamp = Date.now();
+            
+            $('.userIcon').each(function(){$(this).attr('src',$(this).attr('src')+'?'+timestamp)});
+        }
+    </script>
+
+    <script src="{{ prefix }}/static/js/img-upload.js"></script>
+{% endblock %}

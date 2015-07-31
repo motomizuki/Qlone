@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block body_main %}
+    <div class="container">
+        <div class="page-header">
+            <span class="h3">タグ一覧</span>
+        </div>
+        <div data-bind="foreach: tags">
+            <article class="row">
+                <div class="col-sm-6 vcenter">
+                    <div class="pull-left">
+                    <span class="h3" data-bind="text: _id"></span><br>
+                    <span data-bind="text:count"></span>投稿
+                    </div>
+                    <div class="pull-right">
+                        <div data-bind="visible: $root.isFollowed(_id())">
+                            <button class='btn btn-success' data-bind="click: $root.toggleFollows">フォロー中</button>
+                        </div>
+                        <div data-bind="visible: !$root.isFollowed(_id())">
+                            <div class='btn btn-default' data-bind="click: $root.toggleFollows">フォロー</div>
+                        </div>
+                    </div>
+                </div>
+
+            </article>
+        </div>
+
+    </div>
+    <script>
+        function TagsIndexViewModel() {
+            var self = this;
+            self.tags = ko.mapping.fromJS({{ tags | tojson | safe }});
+            
+            self.user = ko.mapping.fromJS({{ user | tojson | safe }});
+
+            self.isFollowed = function (tag) {
+                return self.user.following_tags().indexOf(tag) > -1;
+            };
+
+            self.toggleFollows = function (elem) {
+                var tag = elem._id();
+                var url = '{{ prefix }}/toggle_tags/' + tag;
+                url += (self.isFollowed(tag)) ? '/remove' : '/add';
+                $.get(url, function (data) {
+                    ko.mapping.fromJS(data.data, self.user);
+                });
+            };
+        }
+        ko.applyBindings(new TagsIndexViewModel());
+    </script>
+{% endblock %}

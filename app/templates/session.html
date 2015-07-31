@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block body_main %}
+    <div class="container">
+    <div class="col-sm-8 col-sm-offset-2 text-center">
+        <h4>{{ message | safe }}</h4><br>
+        {% if user %}
+        <h5><a href="{{ prefix }}/drafts/new">早速記事を書く</a></h5>
+        {% endif %}
+    </div>
+
+    </div>
+{% endblock %}

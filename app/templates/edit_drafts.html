@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block js_extra %}
+    <script src="https://cdn.rawgit.com/showdownjs/showdown/1.1.0/dist/showdown.min.js" type="text/javascript"
+            xmlns="http://www.w3.org/1999/html"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processClass: "math",
+        skipTags: ["script","noscript","style","textarea","code"]
+        }});
+    </script>
+        <script type="text/javascript"
+                src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        </script>
+{% endblock %}
+{% block page_title %}
+    {% if oid %}
+        「{{ draft.title }}」を編集
+    {% else %}
+        新規投稿
+    {% endif %}
+{% endblock %}
+{% block body_main %}
+    <div class="editorBody" data-bind="style: { height: calcBodyHeight }">
+
+        <div class="editorHeader">
+            <div class="row">
+
+                <input type="text" class="col-md-12 form-control" placeholder="タイトル" data-bind="value: titleField">
+            </div>
+            <div class="tagsinput-primary row">
+                <input style="display: none;" name="tagsinput " class="tagsinput" data-role="tagsinput" value=""
+                       placeholder="タグをコンマ区切りで入力(例 Ruby Rails:4.2.0)" data-bind="value: tagField">
+            </div>
+        </div>
+        <div class="v-split" data-bind="style: { height: calcEditorAreaHeight}">
+            <div class="editorArea" data-bind="visible: paneMode() != 'preview', style: {width:editorWidth}">
+                <div class="editorMarkdown_header">
+                    <div class="vcenter-wrapper float-left">
+                        <div class="vcenter">
+                            <span>本文</span>
+                            <span><a>書き方</a></span>
+                        </div>
+                    </div>
+
+                    <div class="pane-btn" data-bind="visible: paneMode() == 'editor'">
+                        <button class="btn btn-default btn-xs" data-bind="text: btnLeftLabel, click: btnLeft">
+                            &lt;</button>
+                        <button class="btn btn-default btn-xs" data-bind="text: btnRightLabel, click: btnRight">
+                            &gt;</button>
+                    </div>
+                    <div class="editorMarkdown_header toolbar">
+                        <div class="btn-group">
+                            <input type="file" multiple="multiple">
+                            <button id='img_upload' class="btn btn-link btn-lg imgUpload"><span class="glyphicon glyphicon-picture" aria-hidden="true"></span></button>
+                        </div>
+
+                    </div>
+
+
+                </div>
+                <textarea class="editorMarkdown_textarea" placeholder="Markdownで入力" id="markdown"
+                          data-bind="value: markdown, valueUpdate: 'afterkeydown', style: { height: calcEditorHeight}"></textarea>
+
+            </div>
+            <div class="previewArea" data-bind="visible: paneMode() != 'editor', style: {width:previewWidth}">
+                <div class="preview_header">
+                    <div class="vcenter-wrapper">
+                        <div class="vcenter">
+                            <button class="btn btn-default btn-xs" data-bind="text: btnLeftLabel, click: btnLeft">
+                                &lt;</button>
+                            <button class="btn btn-default btn-xs" data-bind="text: btnRightLabel,click: btnRight">
+                                &gt;</button>
+                            <span>プレビュー</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="preview_renderarea markdown-body" id="preview_renderarea"
+                     data-bind="value: preview, style: { height: calcHeight('main-area')}">
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="row editor_btn_area">
+
+    <div class="btn-group dropup editor_btn_area">
+
+
+        <button class="btn btn-primary" type="button" data-bind="click: pubBtn, html: pubBtnLabel">公開</button>
+        <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" type="button">
+            <span class="caret"></span>
+            <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul role="menu" class="dropdown-menu pull-right">
+            <li><a href="#" data-bind="click: setPublish"><span class="glyphicon glyphicon-open"
+                                                                aria-hidden="true"></span>公開</a></li>
+            <li><a href="#" data-bind="click: setDraft"><span class="glyphicon glyphicon-floppy-disk"
+                                                              aria-hidden="true"></span>下書き保存</a></li>
+        </ul>
+    </div>
+        <div class="has-success editor_btn_area" id="message" hidden><span class="form-control input-sm">自動保存しました</span></div>
+    </div><!-- /btn-group -->
+    <script>
+        var unEscapeHTML = function (str) {
+            return str
+            .replace(/(&lt;)/g, '<')
+            .replace(/(&gt;)/g, '>')
+            .replace(/(&quot;)/g, '"')
+            .replace(/(&#34;)/g, '"')
+            .replace(/(&#39;)/g, "'")
+            .replace(/(&amp;)/g, '&');
+        };
+
+        function DraftsEditViewModel() {
+            var self = this;
+            var $window = $(window);
+            var QUEUE = MathJax.Hub.queue;
+            self.titleField = ko.observable('{{ draft.title if draft else '' }}');
+            self.tagField = ko.observable('{{ draft.tags | join(',') |safe }}');
+            self.markdown = ko.observable(unEscapeHTML('{{ draft.markdown if draft else '' | safe}}'));
+            console.log(self.markdown());
+            
+            self._id = '{{ oid if oid else "" }}';
+            self.user_name = '{{ user.user_name }}';
+
+            // プレビューのレンダリング
+            self.converter = new showdown.Converter();
+            self.preview = ko.computed(function () {
+                
+                var html_content = self.converter.makeHtml(self.markdown());
+                $("#preview_renderarea").html(html_content);
+                try {
+                    MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+                }catch(e){console.log(e)}
+                $('pre code').each(function (i, block) {
+                    if(block.className != "math") {
+                        hljs.highlightBlock(block);
+                    }
+                });
+                return $("#preview_renderarea").html();
+            });
+
+            // エディター、プレビューの画面サイズ
+            self.height = ko.observable($window.height());
+            self.width = ko.observable($window.width());
+            $window.resize(function () {
+                self.height($window.height());
+                self.width($window.width());
+            });
+
+            self.calcHeight = function (target) {
+                var footer_area = 41 + 6,
+                        nav_bar = $("#page_header").height() + 6,
+                        editor_header = 85 + 3,
+                        editor_markdown_header = 31;
+
+                var height = self.height() - footer_area - nav_bar;
+                if (target == 'main-area') {
+                    height = height - editor_header - editor_markdown_header - 5;
+                } else if (target == 'v-split') {
+                    height = height - editor_header;
+                }
+                return height + "px";
+            };
+            self.calcBodyHeight = ko.computed(function () {
+                return self.calcHeight('editorBody');
+            });
+            self.calcEditorAreaHeight = ko.computed(function () {
+                return self.calcHeight('v-split');
+            });
+            self.calcEditorHeight = ko.computed(function () {
+                return self.calcHeight('main-area');
+            });
+
+            //　ペイン
+            self.editorWidth = ko.observable("50%");
+            self.previewWidth = ko.observable("50%");
+            self.paneMode = ko.observable("half");
+            self.btnLeftLabel = ko.observable("<");
+            self.btnRightLabel = ko.observable(">");
+            self.setPane = function (mode, p_width, e_width, l_label, r_label) {
+                self.paneMode(mode);
+                self.previewWidth(p_width);
+                self.editorWidth(e_width);
+                self.btnLeftLabel(l_label);
+                self.btnRightLabel(r_label);
+            };
+
+            self.btnLeft = function () {
+                if (self.paneMode() == "preview") {
+                    self.setPane("half", "50%", "50%", "<", ">");
+                } else {
+                    self.setPane("preview", "100%", "0%", ">", ">>");
+                }
+            };
+            self.btnRight = function () {
+                if (self.paneMode() == "editor") {
+                    self.setPane("half", "50%", "50%", "<", ">");
+                } else {
+                    self.setPane("editor", "0%", "100%", "<<", "<");
+                }
+            };
+
+            // 記事の保存投稿ボタン
+            self.pubFlag = ko.observable(true);
+            self.pubBtnLabel = ko.computed(function () {
+                if (self.pubFlag()) {
+                    return '<span class="glyphicon glyphicon-open" aria-hidden="true"></span>公開';
+                } else {
+                    return '<span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>下書き保存';
+                }
+            });
+            self.setPublish = function () {
+                self.pubFlag(true);
+            };
+            self.setDraft = function () {
+                self.pubFlag(false);
+            };
+            self.save = function (status, callback) {
+                var tags = self.tagField().split(",");
+                
+                var data = {
+                    title: self.titleField(),
+                    tags: tags,
+                    markdown: unEscapeHTML(self.markdown()),
+                    status: status
+                };
+                $.post("{{ prefix }}/items/" + self._id, {data: JSON.stringify(data)}, function (data) {
+                        self._id = data.data._id;
+                        callback.call(data.data);
+                    }, "json")
+            };
+            self.pubBtn = function () {
+                if (self.pubFlag()) {
+                    //公開
+                    self.save('published', function () {
+                        var url = '{{ prefix }}/' + self.user_name + '/items/' + self._id;
+                        $(location).attr("href", url);
+                    });
+                } else {
+                    //下書き保存
+                    self.save("draft", function () {
+                        var url = '{{ prefix }}/drafts/';
+                        
+                        $(location).attr("href", url);
+                    });
+                }
+            };
+            self.mathPreview = function(){
+                $('.math').each(function(e){
+                    e.val();
+                    MathJax.Hub.Queue(
+                            ["Typeset",MathJax.Hub, e]
+                    );
+                });
+            };
+            //自動保存
+            self.auto_save = function () {
+                self.save("draft",function(){
+                    window.history.pushState('', '', '{{ prefix }}/drafts/' + self._id + '/edit');
+                    $('#message').fadeIn(1000).fadeOut(1000)
+                });
+                setTimeout(self.auto_save, 60000);
+            };
+            setTimeout(self.auto_save, 30000);
+
+        }
+        ko.applyBindings(new DraftsEditViewModel());
+        //for upload images
+        var uploadUrl = '{{ prefix }}/upload';
+        function uploadCallback(data){
+            var dat = data.data;
+            var img_md = "\n";
+            for(var i in dat.files_url){
+                img_md += '![img]({{ prefix }}'+dat.files_url[i]+')\n'
+            }
+            
+
+            $('#markdown').val($('#markdown').val()+img_md);
+        }
+    </script>
+    <script src="{{ prefix }}/static/js/img-upload.js"></script>
+{% endblock %}
+
+{% block footer %}
+
+{% endblock %}

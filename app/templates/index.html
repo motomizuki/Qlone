@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+    Qiita:Clone
+{% endblock %}
+{% block navbar %}
+    <div class="index-header">
+
+    </div>
+{% endblock %}
+
+{% block body_main %}
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-7">
+                <div class="logo btn btn-primary btn-lg">Qiita:Clone</div>
+                <div class="index-header">
+
+                </div>
+                <h4>Qloneは非公開情報共有サービスです．
+                </h4>
+            </div>
+            <div class="col-sm-5">
+                <div class="loginField" data-bind="visible:mode()=='login'">
+                    <form class="form" data-bind="submit: Login" method="post">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <input name="identify" type="text" class="form-control input-sm"
+                                       placeholder="ユーザ名またはメールアドレス" data-bind="value:identify"/>
+                            </div>
+
+                        </div>
+                        <div class="row password-field">
+                            <div class="col-sm-9">
+                                <input name="password" type="password" class="form-control input-sm"
+                                       placeholder="パスワード" data-bind="value: login_password"/>
+                            </div>
+                            <div class="col-sm-3">
+                                <button type="submit" class="btn btn-primary btn-sm" >ログイン
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    {#  <div class="forgotPassword">
+                        <a href="{{ prefix }}/sessions/forgot_password">パスワードを忘れた場合</a>
+                    </div>#}
+                    <div class="col-sm-12">
+                        または
+                        <div class="btn btn-link" data-bind="click:createMode">アカウントを作成</div>
+                        する
+                    </div>
+
+                </div>
+                <div class="createField" data-bind="visible:mode()=='create'">
+                    <form class="form"  data-bind="submit: Create" action="#">
+                        <div class="form-group">
+                            <input name="user_name" type="text" class="form-control input-sm" placeholder="ユーザ名"
+                                   data-bind="value:user_name"/>
+                        </div>
+                        <div class="form-group">
+                            <input name="user_email" type="text" class="form-control input-sm" placeholder="メールアドレス"
+                                   data-bind="value:user_email"/>
+                        </div>
+                        <div class="form-group">
+                            <input name="password" type="password" class="form-control input-sm" placeholder="パスワード"
+                                   data-bind="value:password"/>
+                        </div>
+                        <div class="form-group">
+                            <div class="text-right">
+                                <div class="btn btn-link" data-bind="click: loginMode">キャンセル</div>
+                                <button type='submit' class="btn btn-sm btn-primary">
+                                    登録
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script>
+        function IndexViewModel() {
+            var self = this;
+            self.mode = ko.observable("login");
+            self.user_name = ko.observable();
+            self.user_email = ko.observable();
+            self.password = ko.observable();
+            self.identify = ko.observable();
+            self.login_password = ko.observable();
+
+
+            self.loginMode = function () {
+                self.mode("login");
+            };
+            self.createMode = function () {
+                self.mode("create");
+            };
+            self.Create = function () {
+                var data = {
+                    user_name: self.user_name(),
+                    user_email: self.user_email(),
+                    password: self.password()
+                };
+
+                $.post("{{ prefix }}/api/auth/create_account", {data:JSON.stringify(data)}, function(data){
+                    if(data.data.action == "login"){
+                        $(location).attr("href", "{{ prefix }}/");
+                    }else{
+                        $(location).attr("href", "{{ prefix }}/session/account_created");
+                    }
+                }).fail(function(jqXHR){
+                     var err = JSON.parse(jqXHR.responseText);
+                     
+                });
+
+            };
+            self.Login = function () {
+                var data = {
+                    identify: self.identify(),
+                    password: self.login_password()
+                };
+                $.post('{{ prefix }}/api/auth/login', {data:JSON.stringify(data)}, function(data){
+                    
+                    $(location).attr("href", "{{ prefix }}/");
+                }, 'json').fail(function(jqXHR){
+                     var err = JSON.parse(jqXHR.responseText);
+                     
+                });
+
+            };
+
+        }
+        ko.applyBindings(new IndexViewModel());
+    </script>
+{% endblock %}

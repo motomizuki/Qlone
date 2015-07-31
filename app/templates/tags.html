@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block body_main %}
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="tagsHeader row">
+                    <div class="pull-left"><span class="h3" data-bind="text: tagName"></span></div>
+                    <div class="pull-left tagFollowBtnArea">
+                        <button class="btn btn-primary" data-bind="visible: isFollowed, click: toggleFollows">フォロー中
+                        </button>
+                        <button class="btn btn-default" data-bind="visible: !isFollowed(), click: toggleFollows">フォロー
+                        </button>
+                    </div>
+                </div>
+                <hr>
+                <div class="tagsInfo row">
+                    <div class="tagInfoMetric col-sm-2">
+                        <div class="text-center" data-bind="text: items.count"></div>
+                        <div class="text-center">投稿</div>
+                    </div>
+                    <div class="tagInfoMetric col-sm-2">
+                        <div class="text-center" data-bind="text: followers"></div>
+                        <div class="text-center">フォロワー</div>
+                    </div>
+                    <div class="col-sm-8 tagsInfoText">
+                        <span data-bind="text: tagName"></span>に関する情報が集まっています。現在<span data-bind="text: items.count"></span>件の投稿があります。
+                        また<span data-bind="text: followers"></span>人のユーザーが<span data-bind="text: tagName"></span>タグをフォローしています。
+                    </div>
+                </div>
+                <h6>新着の投稿</h6>
+                <div data-bind="visible: items.count()==0">まだ記事はありません</div>
+                <div class="tagging_items" data-bind="foreach: items.documents">
+                    <article class="itemBox media">
+                        <div class="itemAuthorIcon media-left">
+                            <a data-bind="attr: {href: '{{ prefix }}/home/' + user_name()}">
+                                <img class="media-object img-thumbnail" alt="user_icon"
+                                     data-bind="attr: {src: '{{ prefix }}/' + user_name() + '/icon'}">
+                            </a>
+                        </div>
+                        <div class="itemContent media-body">
+                            <div class="row">
+                                <div class="itemInfo"><a
+                                        data-bind="text:user_name, attr: {href: '{{ prefix }}/{{ home }}/' + user_name()}"></a>が<span
+                                        data-bind="text:$root.getPostDateTime(created())"></span>前に投稿しました
+                                </div>
+                                <div class="pull-left"><a
+                                        data-bind="text:title, attr: {href: '{{ prefix }}/'+user_name()+'/items/'+_id()}"></a>
+                                </div>
+                            </div>
+                            <div>
+                                <ul class="list-inline" data-bind="foreach: tags">
+                                    <li><a class='label label-info label-sm'
+                                           data-bind="html:'<span class=\'glyphicon glyphicon-tag\' aria-hidden=\'true\'></span>&nbsp;' + $data, attr:{href:'{{ prefix }}/tags/' + $data}"></a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+            </div>
+            <div class="col-sm-4">
+
+            </div>
+        </div>
+
+    </div>
+    <script>
+        function TagsViewModel() {
+            var self = this;
+            self.items = ko.mapping.fromJS({{ items | tojson | safe }});
+            self.user = ko.mapping.fromJS({{ user | tojson | safe }});
+            self.tagName = ko.observable('{{ tag_name }}');
+            self.followers = ko.observable({{ follower_count }});
+            self.checkFollow = function () {
+                return self.user.following_tags().indexOf(self.tagName()) > -1;
+            };
+            self.isFollowed = ko.computed(function () {
+                return self.checkFollow();
+            });
+            self.toggleFollows = function () {
+                var url = '{{ prefix }}/toggle_tags/' + self.tagName();
+                url += (self.isFollowed()) ? '/remove' : '/add';
+                $.get(url, function (data) {
+                    ko.mapping.fromJS(data.data, self.user);
+                });
+            };
+            self.getPostDateTime = function (created) {
+                var post = moment(created);
+                var now = moment();
+                var y = now.diff(post, "year"); // 閏年の計算のため
+                if (y > 0) return String(y) + '年';
+
+                var msec = now.diff(post);
+                
+                var sec = msec / 1000 | 0;
+                var min = sec / 60 | 0;
+                var h = min / 60 | 0;
+                var d = h / 24 | 0;
+                if (d > 0) return String(d) + '日';
+                if (h > 0) return String(h) + '時間';
+                if (min > 0) return String(min) + '分';
+
+                return String(sec) + '秒';
+            };
+        }
+        ko.applyBindings(new TagsViewModel());
+    </script>
+{% endblock %}
