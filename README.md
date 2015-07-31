@@ -16,7 +16,7 @@ $ pyenv install 3.4.x
 [Install MongoDB](http://docs.mongodb.org/manual/installation/)を参照してください．
 ## Qloneのセットアップ
 ```
-$ git clone 
+$ git clone git@github.com:motomizuki/Qlone.git
 ```
 ## 依存ライブラリのインストール
 
@@ -31,7 +31,7 @@ $ pip install -r requirements.txt
 $ pip install -U pip 
 ```
 
-をするとうまくいくかも
+をするとうまくいくかも.
 
 ## Qloneの設定
 `config.example.py`を`config.py`にリネームして，  
@@ -43,6 +43,7 @@ SECRET_KEY = "fugafuga"
 SESSION_KEY = "hogehoge"
 HOST = "127.0.0.1"  # Qloneが起動するホスト名
 PORT = 8888  # Qloneが起動するポート番号
+DEBUG = False  # デバックモードか否か
 # Qloneのルート
 # http://host:port/hoge/ のアドレスでQloneを起動したい場合
 # APPLICATION_ROOT = "/hoge"
@@ -51,7 +52,7 @@ APPLICATION_ROOT = ""
 # for mongodb
 MONGO_HOST = "127.0.0.1"
 MONGO_DBNAME = "qlone"
-DEBUG = True
+
 
 # for mail
 MAIL_AUTH = True  # メール認証をするか
