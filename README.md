@@ -16,7 +16,7 @@ $ pyenv install 3.4.x
 [Install MongoDB](http://docs.mongodb.org/manual/installation/)を参照してください．
 ## Qloneのセットアップ
 ```
-$ git clone https://github.com/yyuu/pyenv.git
+$ git clone https://github.com/motomizuki/Qlone.git
 ```
 ## 依存ライブラリのインストール
 
