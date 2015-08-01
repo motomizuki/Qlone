@@ -19,7 +19,7 @@ module = Blueprint('auth', __name__, url_prefix=app.config["APPLICATION_ROOT"])
 @module.route('/api/auth/login', methods=['POST'])
 def auth_login():
     """
-    :post_param {string} name: required
+    :post_param {string} identify: required
     :post_param {string} password: required
     :return {number} code: status code
     :return {string} token: jwt

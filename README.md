@@ -10,7 +10,20 @@ $ git clone https://github.com/yyuu/pyenv.git ~/.pyenv
 $ echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
 $ echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
 $ echo 'eval "$(pyenv init -)"' >> ~/.bash_profile
-$ pyenv install 3.4.x
+
+```
+
+python3のコンパイルに必要なライブラリのインストール  
+ubuntsuの場合は以下
+
+```
+$ sudo apt-get install build-essential libbz2-dev libreadline-dev libsqlite3-dev libssl-dev libffi-dev python3-dev
+
+```
+
+python 3.4.3をインストール
+```
+$ pyenv install 3.4.3
 ```
 ## mongodbを用意
 [Install MongoDB](http://docs.mongodb.org/manual/installation/)を参照してください．
