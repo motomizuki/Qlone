@@ -4,7 +4,7 @@ Flask==0.10.1
 Flask-Script==2.0.5
 idna==2.0
 itsdangerous==0.24
-Jinja2==2.8
+Jinja2==2.11.3
 MarkupSafe==0.23
 mistune==0.7
 pyasn1==0.1.8
